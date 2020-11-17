@@ -1,5 +1,5 @@
 ;Larcy William M2 TNSI
-;Cocquebert Stéphane M2 TNSI
+
 
 ; *********************************************************************************
 ; Sim_Traffic
