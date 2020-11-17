@@ -38,7 +38,7 @@ banners-own
   num-cars-accident        ; nbre de vehicules accidentes dans le carrefour
 ;  densite-road             ; densite à chaque cycle sur une portion de route
 ;  vitesse-road             ; moyenne des vitesses sur la portion de route
-
+  turn ; inutile juste pour test des trucs
 ]
 
 vehicles-own
@@ -46,6 +46,7 @@ vehicles-own
   speed         ;; the speed of the turtle
   speed-max     ;; the maximum speed of the car (different for all cars)
   direction     ;; "N", 'E', 'W', "S"
+  turn          ;; boolean pour savoir si la voiture tourne
 ]
 
 ; **********************************************************************************
@@ -366,6 +367,33 @@ to tourner
  ; ]
 end
 
+to tourner-droite
+  rt 18
+  fd 1
+end
+
+to tourner-gauche
+  lt 18
+  fd 1
+end
+
+to avancer
+  fd 1
+end
+
+to kill
+
+end
+
+to move
+  ask patch-here [
+      ifelse( intersection? = true) [ ask turtles-here [ set turn true ] ]
+                                    [ ask turtles-here [ set turn false ] ]
+    ]
+    ifelse(turn = true) [ tourner-gauche ]
+                        [ avancer ]
+end
+
 to go
   ask patches with [pcolor != brown + 3]
   [
@@ -375,8 +403,8 @@ to go
   accident
 ask vehicles
   [
-  deplacement_car
-
+  ;deplacement_car
+    move
   ]
   tick
 end
