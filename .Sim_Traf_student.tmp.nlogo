@@ -32,7 +32,6 @@ patches-own
   nb_accident       ;; compteur d'accidents
   nb_voiture     ;; nb de voiture dans le patch
 
-  turn ; inutile juste pour test des trucs
 ]
 
 banners-own
