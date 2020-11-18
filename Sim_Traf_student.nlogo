@@ -331,10 +331,6 @@ to up-accident
   set nb_accident nb_accident + 1
 end
 
-to deplacement_car
-    rt 0 fd speed
-end
-
 to accident  ;détruit véhicules si accident et compte le nombre coup entre véhicule.
   if crash? = true
   [
@@ -363,20 +359,20 @@ end
 
 to tourner-droite
   rt 18
-  fd 1
+  fd speed
 end
 
 to tourner-gauche
   lt 18
-  fd 1
+  fd speed
 end
 
 to avancer
-  fd 1
+  fd speed
 end
 
-to kill
-
+to deplacement_car
+    rt 0 fd speed
 end
 
 to move
@@ -398,7 +394,7 @@ to go
 ask vehicles
   [
   ;deplacement_car
-    move
+  move
   ]
   tick
 end
@@ -560,7 +556,7 @@ num-cars
 num-cars
 0
 400
-15.0
+400.0
 1
 1
 NIL
@@ -629,7 +625,7 @@ BUTTON
 94
 NIL
 go
-T
+NIL
 1
 T
 OBSERVER
