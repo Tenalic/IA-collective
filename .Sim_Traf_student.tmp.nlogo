@@ -1,5 +1,5 @@
 ;Larcy William M2 TNSI
-
+;Cocquebert Stéphane M2 TNSI
 
 ; *********************************************************************************
 ; Sim_Traffic
@@ -31,6 +31,7 @@ patches-own
   clear-in        ;; nbre de ticks où le patch produit un autre accident
   nb_accident       ;; compteur d'accidents
   nb_voiture     ;; nb de voiture dans le patch
+
 ]
 
 banners-own
@@ -38,7 +39,6 @@ banners-own
   num-cars-accident        ; nbre de vehicules accidentes dans le carrefour
 ;  densite-road             ; densite à chaque cycle sur une portion de route
 ;  vitesse-road             ; moyenne des vitesses sur la portion de route
-
 ]
 
 vehicles-own
@@ -46,6 +46,8 @@ vehicles-own
   speed         ;; the speed of the turtle
   speed-max     ;; the maximum speed of the car (different for all cars)
   direction     ;; "N", 'E', 'W', "S"
+  turn          ;; boolean pour savoir si la voiture tourne
+  num_voie       ;; numero de la voie si 1 on est le plus a droite, si 2 au milieu, etc...
 ]
 
 ; **********************************************************************************
@@ -325,9 +327,38 @@ end
 ; votre code
 ; ***************************************************************************
 
+to initialise_num_voie
+  ask vehicles
+  [
+    if(intersection?)
+    [
+      ;faire que sa avance u
+    ]
 
-to deplacement_car
-    rt 0 fd speed
+    let i 0
+    ask patch-here
+    [
+      ask neighbors
+      [
+        if (pcolor = brown + 3)
+        [
+          set i 1
+        ]
+      ]
+    ]
+
+    set num_voie 1
+    if ( road-size = 2 and i = 0)
+    [
+      set num_voie 2
+    ]
+
+    ]
+
+end
+
+to up-accident
+  set nb_accident nb_accident + 1
 end
 
 to accident  ;détruit véhicules si accident et compte le nombre coup entre véhicule.
@@ -338,45 +369,68 @@ to accident  ;détruit véhicules si accident et compte le nombre coup entre vé
     [
       if(nb_voiture >= 2 )
       [
-
-        set num-cars-hit num-cars-hit + 2
-        let x pxcor
-        let y pycor
-        show x
-        ask vehicles
-        [
-          let x2 xcor
-          show x2
-          let y2 ycor
-          if(((x - x2) < 0.5) and ((x - x2) > -0.5) and ((y - y2) < 0.5) and ((y - y2) > -0.5))
-          [
-            die
-          ]
+        ask turtles-here [
+          up-accident
+          die
         ]
+
       ]
     ]
   ]
 end; look dans les patchs
 
 
-to tourner
- ; ask vehicles
- ; [
- ;   if
- ; ]
+to tourner-droite-voie1
+
+  rt 45
+  fd speed
+end
+
+to tourner-droite-voie2
+  if (intersection? = true and turn = true )
+  [
+    rt 15
+    fd speed
+  ]
+
+end
+
+to tourner-gauche
+  lt 18
+  fd speed
+end
+
+to avancer
+  fd speed
+end
+
+to deplacement_car
+    rt 0 fd speed
+end
+
+to move
+  ask patch-here [
+      ifelse( intersection? = true) [ ask turtles-here [ set turn true ] ]
+                                    [ ask turtles-here [ set turn false ] ]
+    ]
+  ifelse(turn = true) [ ifelse(num_voie = 1)[tourner-droite-voie1
+  show "voie1"][tourner-droite-voie2] ]
+                        [ avancer ]
 end
 
 to go
+  initialise_num_voie
   ask patches with [pcolor != brown + 3]
   [
+
     set nb_voiture count turtles-here
 
   ]
   accident
 ask vehicles
   [
-  deplacement_car
-
+  ;deplacement_car
+  move
   ]
   tick
 end
@@ -477,7 +531,7 @@ SWITCH
 174
 crash?
 crash?
-0
+1
 1
 -1000
 
@@ -538,7 +592,7 @@ num-cars
 num-cars
 0
 400
-15.0
+2.0
 1
 1
 NIL
@@ -607,7 +661,7 @@ BUTTON
 94
 NIL
 go
-T
+NIL
 1
 T
 OBSERVER
