@@ -31,6 +31,7 @@ patches-own
   clear-in        ;; nbre de ticks où le patch produit un autre accident
   nb_accident       ;; compteur d'accidents
   nb_voiture     ;; nb de voiture dans le patch
+
 ]
 
 banners-own
@@ -38,7 +39,8 @@ banners-own
   num-cars-accident        ; nbre de vehicules accidentes dans le carrefour
 ;  densite-road             ; densite à chaque cycle sur une portion de route
 ;  vitesse-road             ; moyenne des vitesses sur la portion de route
-  turn ; inutile juste pour test des trucs
+  turn ;; pour eviter une erreur
+  choix ;; pour eviter une erreur
 ]
 
 vehicles-own
@@ -47,7 +49,8 @@ vehicles-own
   speed-max     ;; the maximum speed of the car (different for all cars)
   direction     ;; "N", 'E', 'W', "S"
   turn          ;; boolean pour savoir si la voiture tourne
-  choix         ;; 1 2 ou 3
+  num_voie       ;; numero de la voie si 1 on est le plus a droite, si 2 au milieu, etc...
+  choix
 ]
 
 ; **********************************************************************************
@@ -327,6 +330,35 @@ end
 ; votre code
 ; ***************************************************************************
 
+to initialise_num_voie
+  ask vehicles
+  [
+    if(intersection?)
+    [
+      ;faire que sa avance jusqu'a ce que l'on sorte de l'intersection
+    ]
+
+    let i 0
+    ask patch-here
+    [
+      ask neighbors
+      [
+        if (pcolor = brown + 3)
+        [
+          set i 1
+        ]
+      ]
+    ]
+
+    set num_voie 1
+    if ( road-size = 2 and i = 0)
+    [
+      set num_voie 2
+    ]
+
+    ]
+
+end
 
 to up-accident
   set nb_accident nb_accident + 1
@@ -351,40 +383,26 @@ to accident  ;détruit véhicules si accident et compte le nombre coup entre vé
 end; look dans les patchs
 
 
-to tourner
- ; ask vehicles
- ; [
- ;   if
- ; ]
-end
-
-to tourner-droite
-  rt 18
-
+to tourner-droite-voie1
+  rt 45
   fd speed
 end
 
+to tourner-droite-voie2
+  if (intersection? = true and turn = true )
+  [
+    rt 15
+    fd speed
+  ]
+end
+
 to tourner-gauche
-  lt 7
+  lt 18
   fd speed
 end
 
 to avancer
   fd speed
-end
-
-to avancer-2
-  ifelse(choix = 1) [
-    avancer
-  ]
-  [
-    ifelse(choix = 2) [
-      tourner-droite
-    ]
-    [
-      tourner-gauche
-    ]
-  ]
 end
 
 to deplacement_car
@@ -394,16 +412,40 @@ end
 to move
   let liste [1 2 3]
   ask patch-here [
-    ifelse( intersection? = true) [ ask turtles-here [ if(turn = false) [set turn true set choix one-of liste]] ]
+      ifelse( intersection? = true) [ ask turtles-here [ set turn true set choix one-of liste] ]
                                     [ ask turtles-here [ set turn false ] ]
     ]
-    ifelse(turn = true) [ avancer-2 ]
+  ifelse(turn = true) [
+    ;avancer-2
+    avancer-pour-test
+  ]
                         [ avancer ]
 end
 
+to avancer-2
+  ifelse(choix = 1) [
+    avancer
+  ]
+  [
+    ifelse(choix = 2) [
+      ifelse(num_voie = 1) [tourner-droite-voie1 show "voie1"] [tourner-droite-voie2]
+    ]
+    [
+      tourner-gauche
+    ]
+  ]
+end
+
+; pour eviter le comportement aléatoire
+to avancer-pour-test
+  ifelse(num_voie = 1) [tourner-droite-voie1 show "voie1"] [tourner-droite-voie2]
+end
+
 to go
+  initialise_num_voie
   ask patches with [pcolor != brown + 3]
   [
+
     set nb_voiture count turtles-here
 
   ]
@@ -573,7 +615,7 @@ num-cars
 num-cars
 0
 400
-94.0
+2.0
 1
 1
 NIL
@@ -642,7 +684,7 @@ BUTTON
 94
 NIL
 go
-T
+NIL
 1
 T
 OBSERVER
