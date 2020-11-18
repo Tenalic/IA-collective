@@ -47,6 +47,7 @@ vehicles-own
   speed-max     ;; the maximum speed of the car (different for all cars)
   direction     ;; "N", 'E', 'W', "S"
   turn          ;; boolean pour savoir si la voiture tourne
+  choix         ;; 1 2 ou 3
 ]
 
 ; **********************************************************************************
@@ -359,11 +360,12 @@ end
 
 to tourner-droite
   rt 18
+
   fd speed
 end
 
 to tourner-gauche
-  lt 18
+  lt 7
   fd speed
 end
 
@@ -371,16 +373,31 @@ to avancer
   fd speed
 end
 
+to avancer-2
+  ifelse(choix = 1) [
+    avancer
+  ]
+  [
+    ifelse(choix = 2) [
+      tourner-droite
+    ]
+    [
+      tourner-gauche
+    ]
+  ]
+end
+
 to deplacement_car
     rt 0 fd speed
 end
 
 to move
+  let liste [1 2 3]
   ask patch-here [
-      ifelse( intersection? = true) [ ask turtles-here [ set turn true ] ]
+    ifelse( intersection? = true) [ ask turtles-here [ if(turn = false) [set turn true set choix one-of liste]] ]
                                     [ ask turtles-here [ set turn false ] ]
     ]
-    ifelse(turn = true) [ tourner-gauche ]
+    ifelse(turn = true) [ avancer-2 ]
                         [ avancer ]
 end
 
@@ -495,7 +512,7 @@ SWITCH
 174
 crash?
 crash?
-0
+1
 1
 -1000
 
@@ -556,7 +573,7 @@ num-cars
 num-cars
 0
 400
-400.0
+94.0
 1
 1
 NIL
@@ -625,7 +642,7 @@ BUTTON
 94
 NIL
 go
-NIL
+T
 1
 T
 OBSERVER
