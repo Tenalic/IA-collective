@@ -327,6 +327,10 @@ end
 ; ***************************************************************************
 
 
+to up-accident
+  set nb_accident nb_accident + 1
+end
+
 to deplacement_car
     rt 0 fd speed
 end
@@ -339,21 +343,11 @@ to accident  ;détruit véhicules si accident et compte le nombre coup entre vé
     [
       if(nb_voiture >= 2 )
       [
-
-        set num-cars-hit num-cars-hit + 2
-        let x pxcor
-        let y pycor
-        show x
-        ask vehicles
-        [
-          let x2 xcor
-          show x2
-          let y2 ycor
-          if(((x - x2) < 0.5) and ((x - x2) > -0.5) and ((y - y2) < 0.5) and ((y - y2) > -0.5))
-          [
-            die
-          ]
+        ask turtles-here [
+          up-accident
+          die
         ]
+
       ]
     ]
   ]
