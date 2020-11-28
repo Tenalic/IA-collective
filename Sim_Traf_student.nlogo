@@ -31,6 +31,9 @@ patches-own
   clear-in        ;; nbre de ticks où le patch produit un autre accident
   nb_accident       ;; compteur d'accidents
   nb_voiture     ;; nb de voiture dans le patch
+  cycle-feu  ;; temps ou le feu reste à une couleur
+  feu-here ;; true si feu rouge
+  init-feu
 
 ]
 
@@ -39,6 +42,7 @@ banners-own
   num-cars-accident        ; nbre de vehicules accidentes dans le carrefour
 ;  densite-road             ; densite à chaque cycle sur une portion de route
 ;  vitesse-road             ; moyenne des vitesses sur la portion de route
+  turn
 ]
 
 vehicles-own
@@ -48,6 +52,10 @@ vehicles-own
   direction     ;; "N", 'E', 'W', "S"
   turn          ;; boolean pour savoir si la voiture tourne
   num_voie       ;; numero de la voie si 1 on est le plus a droite, si 2 au milieu, etc...
+  intersectionSpawn ;;si la voiture est crée sur une intersection
+ ;; turnleft ;; valeur de temporisation pour tourner a gauche
+  attente  ;; pour essayer de rendre le traffic plus fluide (freinage, arreter)
+  dirTurn ;; aleatoire si 0 tout droit, si 1 a gauche, si 2 a droite -1 si pas de direction
 ]
 
 ; **********************************************************************************
@@ -276,6 +284,7 @@ to setup-cars
  ;  set size 1
    set direction road-direct
    set heading direction
+  set intersectionSpawn true
 end
 
 to put-on-empty-road  ;; turtle procedure
@@ -330,11 +339,9 @@ end
 to initialise_num_voie
   ask vehicles
   [
-    if(intersection?)
+    if (intersection? = false)
     [
-      ;faire que sa avance jusqu'a ce que l'on sorte de l'intersection
-    ]
-
+    set  intersectionSpawn false
     let i 0
     ask patch-here
     [
@@ -352,10 +359,104 @@ to initialise_num_voie
     [
       set num_voie 2
     ]
+   ; if ( road-size = 3 and i = 0)
+    ;[
+     ;let dirtmp dir
+     ;let x pxcor
+     ;let y pxcor
+      ;  if(dir = "N")
+       ; [
+     ;ask patch-at (x - 1) y
+     ;[
+      ;  show dir
+       ; ifelse (dir != dirtmp and intersection? = false)
+        ;[
+         ; set num_voie 3
+        ;]
+        ;[
+         ; set num_voie 2
+        ;]
+      ;]
+    ;]
+     ; ]
+    ]
+    ]
+end
 
+to initialise_car_in_intersection  ; juste pour le cas où les voitures sont crée aux intersections
+  ask Vehicles
+  [
+    let tmp intersectionspawn
+    let tmp2 true
+  ask patch-here
+  [
+  if(intersection? = true)
+  [
+     set tmp2 true
+      ]
+    ]
+    if (tmp2 = true and tmp = true)
+    [
+    avancer;
+  ]
+
+  if(intersection? = false)
+  [
+   set tmp  false
+  ]
+
+    set intersectionspawn tmp
+    if intersectionspawn = false
+    [
+      if (tmp2 = false)
+    [
+    set  intersectionSpawn false
+    let i 0
+    ask patch-here
+    [
+      ask neighbors
+      [
+        if (pcolor = brown + 3)
+        [
+          set i 1
+        ]
+      ]
     ]
 
+    set num_voie 1
+
+
+    if ( road-size = 2 and i = 0)
+    [
+      set num_voie 2
+
+    ]
+    ;if ( road-size = 3 and i = 0)
+   ;[
+     ;let dirtmp dir
+     ;let x pxcor
+     ;let y pxcor
+     ;if(dir = "N")
+      ;    [
+     ;ask patch-at (x - 1) y
+     ;[
+      ;  show dir
+       ; ifelse (dir != dirtmp and intersection? = false)
+        ;[
+         ; set num_voie 3
+        ;]
+        ;[
+         ; set num_voie 2
+        ;]
+      ;]
+    ;]
+    ;]
+    ]
+    ]
+
+  ]
 end
+
 
 to up-accident
   set nb_accident nb_accident + 1
@@ -373,64 +474,670 @@ to accident  ;détruit véhicules si accident et compte le nombre coup entre vé
           up-accident
           die
         ]
-
       ]
     ]
   ]
-end; look dans les patchs
+end
 
 
 to tourner-droite-voie1
 
   rt 45
-  fd speed
+  fd 0.52
+   ifelse(direction < 270)
+   [
+     set direction (direction + 90)
+    ]
+   [
+     set direction 0
+    ]
 end
 
 to tourner-droite-voie2
   if (intersection? = true and turn = true )
   [
     rt 15
-    fd speed
+    fd 0.45
+    if(intersection? = false)
+  [
+   ifelse(direction < 270)
+   [
+     set direction (direction + 90)
+    ]
+   [
+     set direction 0
+    ]
+  ]
+  ]
+end
+
+to tourner-droite-voie3
+  [
+    ; initialisation lors de 3 voie non fonctionnel
+  ]
+end
+
+to tourner-gauche-voie2
+
+  lt 4.9
+  fd 0.20
+  if(intersection? = false)
+  [
+   ifelse(direction > 0)
+   [
+     set direction (direction - 90)
+    ]
+   [
+     set direction 270
+    ]
+  ]
+end
+
+to tourner-gauche-voie1
+  lt 3.2
+  fd 0.20
+  if(intersection? = false)
+  [
+   ifelse(direction > 0)
+   [
+     set direction (direction - 90)
+    ]
+   [
+     set direction 270
+    ]
+  ]
+end
+
+to avancer
+  ask patch-here
+  [
+    if ( pcolor != brown + 3)
+    [
+    let action 0; pour avancer 1 pour freiner 2 pour s'arreter
+
+    let x pxcor
+    let y pycor
+    ask Vehicles-here
+    [
+    if( direction = 0)
+    [
+     ask patch x (y + 1)
+      [
+        let tmp (count Vehicles-here)
+        if(tmp > 0)
+        [
+          set action 2
+        ]
+      ]
+      ask patch x (y + 2)
+      [
+        let tmp (count Vehicles-here)
+         if(tmp > 0)
+        [
+          set action 1
+        ]
+      ]
+    ]
+    if(direction = 180)
+    [
+      ask patch x (y - 1)
+      [
+        let tmp (count Vehicles-here)
+        if(tmp > 0)
+        [
+          set action 2
+        ]
+      ]
+      ask patch x (y - 2)
+      [
+        let tmp (count Vehicles-here)
+         if(tmp > 0)
+        [
+          set action 1
+        ]
+      ]
+  ]
+    if(direction = 90)
+    [
+      ask patch (x + 1) y
+      [
+        let tmp (count Vehicles-here)
+        if(tmp > 0)
+        [
+          set action 2
+        ]
+      ]
+      ask patch ( x + 2) y
+      [
+        let tmp (count Vehicles-here)
+         if(tmp > 0)
+        [
+         set action 1
+        ]
+      ]
+  ]
+    if(direction = 270)
+    [
+      ask patch (x - 1) y
+      [
+        let tmp (count Vehicles-here)
+
+        if(tmp > 0)
+        [
+          set action 2
+        ]
+      ]
+      ask patch ( x - 2) y
+      [
+        let tmp (count Vehicles-here)
+         if(tmp > 0)
+        [
+          set action 1
+        ]
+      ]
+  ]
+       ifelse(action = 2)
+  [
+        set attente true
+    arreter_car
+
+  ]
+  [
+    ifelse(action = 1)
+    [
+     set attente true
+     freiner
+
+    ]
+    [
+      set attente false
+      set speed 0.1 + random-float speed-limit
+      fd speed
+    ]
+  ]
+  ]
+    ]
   ]
 
 end
 
-to tourner-gauche
-  lt 18
-  fd speed
-end
 
-to avancer
-  fd speed
+to priorite-droite
+  let x 0
+  let y 0
+  let nbCar 0
+  ask patch-here
+  [
+
+    set x pxcor
+    set y pycor
+    ask Vehicles-here
+    [
+      ifelse(intersection? = true)
+    [
+      if (direction = 0)
+      [
+        ask patch x ( y + 1)
+        [
+          set nbCar (count Vehicles-here)
+        ]
+        ifelse(nbCar = 0)
+        [
+          ask patch ( x ) (y + 2)
+          [
+            set nbCar (count Vehicles-here)
+          ]
+            ifelse(nbCar = 0)
+        [
+          ask patch ( x + 1) (y + 1)
+          [
+            set nbCar (count Vehicles-here)
+          ]
+              ifelse(nbCar = 0)
+        [
+          ask patch ( x + 2) (y + 1)
+          [
+            set nbCar (count Vehicles-here)
+          ]
+                ifelse(nbCar = 0)
+        [
+          ask patch ( x + 1 ) (y + 2)
+          [
+            set nbCar (count Vehicles-here)
+          ]
+                  ifelse(nbCar = 0)
+        [
+          ask patch ( x + 2) (y + 2)
+          [
+            set nbCar (count Vehicles-here)
+          ]
+        ]
+        [
+          arreter_car
+        ]
+        ]
+        [
+          arreter_car
+        ]
+        ]
+        [
+          arreter_car
+        ]
+        ]
+        [
+          arreter_car
+        ]
+        ]
+        [
+          arreter_car
+        ]
+        if (nbCar = 0)
+        [
+          avancer
+        ]
+      ]
+
+      if (direction = 180)
+      [
+        ask patch x ( y - 1)
+        [
+          set nbCar (count Vehicles-here)
+        ]
+        ifelse(nbCar = 0)
+        [
+          ask patch ( x ) (y - 2)
+          [
+            set nbCar (count Vehicles-here)
+          ]
+            ifelse(nbCar = 0)
+        [
+          ask patch ( x - 1) (y - 1)
+          [
+            set nbCar (count Vehicles-here)
+          ]
+              ifelse(nbCar = 0)
+        [
+          ask patch ( x - 2) (y - 1)
+          [
+            set nbCar (count Vehicles-here)
+          ]
+                ifelse(nbCar = 0)
+        [
+          ask patch ( x - 1 ) (y - 2)
+          [
+            set nbCar (count Vehicles-here)
+          ]
+                  ifelse(nbCar = 0)
+        [
+          ask patch ( x - 2) (y - 2)
+          [
+            set nbCar (count Vehicles-here)
+          ]
+        ]
+        [
+          arreter_car
+        ]
+        ]
+        [
+          arreter_car
+        ]
+        ]
+        [
+          arreter_car
+        ]
+        ]
+        [
+          arreter_car
+        ]
+        ]
+        [
+          arreter_car
+        ]
+        if (nbCar = 0)
+        [
+          avancer
+        ]
+      ]
+      if (direction = 270)
+      [
+        ask patch (x - 1) ( y )
+        [
+          set nbCar (count Vehicles-here)
+        ]
+        ifelse(nbCar = 0)
+        [
+          ask patch ( x - 1 ) (y + 1)
+          [
+            set nbCar (count Vehicles-here)
+          ]
+            ifelse(nbCar = 0)
+        [
+          ask patch ( x - 1) (y + 2)
+          [
+            set nbCar (count Vehicles-here)
+          ]
+              ifelse(nbCar = 0)
+        [
+          ask patch ( x - 2) (y)
+          [
+            set nbCar (count Vehicles-here)
+          ]
+                ifelse(nbCar = 0)
+        [
+          ask patch ( x - 2 ) (y + 1)
+          [
+            set nbCar (count Vehicles-here)
+          ]
+                  ifelse(nbCar = 0)
+        [
+          ask patch ( x - 2) (y + 2)
+          [
+            set nbCar (count Vehicles-here)
+          ]
+        ]
+        [
+          arreter_car
+        ]
+        ]
+        [
+          arreter_car
+        ]
+        ]
+        [
+          arreter_car
+        ]
+        ]
+        [
+          arreter_car
+        ]
+        ]
+        [
+          arreter_car
+        ]
+        if (nbCar = 0)
+        [
+          avancer
+        ]
+      ]
+
+      if (direction = 90)
+      [
+        ask patch ( x + 1) ( y )
+        [
+          set nbCar (count Vehicles-here)
+        ]
+        ifelse(nbCar = 0)
+        [
+          ask patch ( x + 2) (y)
+          [
+            set nbCar (count Vehicles-here)
+          ]
+            ifelse(nbCar = 0)
+        [
+          ask patch ( x + 1) (y - 1)
+          [
+            set nbCar (count Vehicles-here)
+          ]
+              ifelse(nbCar = 0)
+        [
+          ask patch ( x + 2) (y - 1)
+          [
+            set nbCar (count Vehicles-here)
+          ]
+                ifelse(nbCar = 0)
+        [
+          ask patch ( x + 1 ) (y - 2)
+          [
+            set nbCar (count Vehicles-here)
+          ]
+                  ifelse(nbCar = 0)
+        [
+          ask patch ( x + 2) (y - 2)
+          [
+            set nbCar (count Vehicles-here)
+          ]
+        ]
+        [
+          arreter_car
+        ]
+        ]
+        [
+          arreter_car
+        ]
+        ]
+        [
+          arreter_car
+        ]
+        ]
+        [
+          arreter_car
+        ]
+        ]
+        [
+          arreter_car
+        ]
+        if (nbCar = 0)
+        [
+          avancer
+        ]
+      ]
+
+    ]
+      [
+      avancer
+    ]
+  ]
+
+  ]
+
 end
 
 to deplacement_car
     rt 0 fd speed
 end
 
+to move2
+  let tmpturn dirTurn
+  ask patch-here
+  [
+   ifelse ( intersection? = true and tmpturn = -1 )
+    [
+      set tmpturn (random 3)
+    ]
+    [
+      if (intersection? = false)
+      [
+       set tmpturn -1
+      ]
+    ]
+  ]
+  if( tmpturn = 0)
+  [
+    set turn false
+   avancer
+  ]
+  if (tmpturn = 1)
+  [
+   if (num_voie = 1 )
+  [
+      set turn true
+    tourner-gauche-voie1
+    ]
+    if(num_voie = 2)
+    [
+      set turn true
+     tourner-gauche-voie2
+    ]
+  ]
+  if(tmpturn = 2)
+  [
+   if (num_voie = 1)
+   [
+      set turn true
+     tourner-droite-voie1
+    ]
+    if(num_voie = 2 )
+    [
+      set turn true
+     tourner-droite-voie2
+
+    ]
+  ]
+  if(tmpturn = -1)
+  [
+    set turn false
+   avancer
+
+  ]
+  set dirTurn tmpturn
+end
+
+
+
 to move
   ask patch-here [
       ifelse( intersection? = true) [ ask turtles-here [ set turn true ] ]
                                     [ ask turtles-here [ set turn false ] ]
     ]
-  ifelse(turn = true) [ ifelse(num_voie = 1)[tourner-droite-voie1
-  show "voie1"][tourner-droite-voie2] ]
-                        [ avancer ]
+  ifelse(turn = true) [ ifelse(num_voie = 1)[tourner-gauche-voie1][ifelse(num_voie = 2)[tourner-gauche-voie2][tourner-droite-voie3] ]]
+                        [ ifelse(intersection? = true)[priorite-droite ][avancer]]
+end
+
+to freiner  ;; si il detect une voiture devant lui (2 patch devant)
+  set speed (speed / 4)
+  fd speed
+end
+
+to arreter_car ;; si il detecte une voiture devant lui (1 patch devant)
+  set speed 0
+  fd speed
+end
+
+to initialise_feu_rouge
+
+  ask patches with [pcolor != brown + 3]
+  [
+    let feu false
+    let x pxcor
+    let y pycor
+    if (dir = "N")
+    [
+        ask patch  x ( y + 1)
+        [
+          if (intersection? = true)
+          [
+           set feu true
+          ]
+        ]
+    ]
+    if (dir = "S")
+    [
+      ask patch  x ( y - 1)
+        [
+          if (intersection? = true)
+          [
+           set feu true
+          ]
+        ]
+    ]
+    if (dir = "E")
+    [
+      ask patch  ( x + 1)  y
+        [
+          if (intersection? = true)
+          [
+           set feu true
+          ]
+        ]
+    ]
+    if (dir = "W")
+    [
+      ask patch  ( x - 1)  y
+        [
+          if (intersection? = true)
+          [
+           set feu true
+          ]
+        ]
+    ]
+    set feu-here feu
+  ]
+end
+
+to affiche_feu
+
+  ifelse (init-feu = 0)
+  [
+  if( feu-here = true and (dir = "W" or dir = "E" ))
+  [
+    set cycle-feu 0
+    set pcolor green
+      set init-feu 1
+  ]
+  if ( feu-here = true and (dir = "N" or dir = "S" ))
+  [
+   set pcolor red
+      set init-feu 1
+      set cycle-feu 0
+  ]
+  ]
+  [
+    ifelse( cycle-feu < cycle-feu-rouge)
+    [
+      set cycle-feu (cycle-feu + 1)
+    ]
+    [
+      if(cycle-feu = cycle-feu-rouge)
+      [
+
+
+        ask patches with [(pcolor = red or pcolor = green) and cycle-feu = cycle-feu-rouge]
+        [
+         ifelse (pcolor = red)
+          [
+            set pcolor green
+            set cycle-feu 0
+          ][
+          if (pcolor = green)
+          [
+            set pcolor red
+              set cycle-feu 0
+          ]
+        ]]
+      ]
+    ]
+  ]
 end
 
 to go
   initialise_num_voie
+  initialise_feu_rouge
   ask patches with [pcolor != brown + 3]
   [
-
+    affiche_feu
     set nb_voiture count turtles-here
 
   ]
   accident
 ask vehicles
   [
-  ;deplacement_car
-  move
+    let tmp 0
+  ifelse(intersectionspawn = false)
+    [
+    ask patch-here
+      [
+        if (pcolor = red)
+        [
+          set tmp 1
+        ]
+      ]
+      ifelse (tmp = 1)
+      [arreter_car][move2]
+
+    ]
+    [
+      initialise_car_in_intersection
+    ]
   ]
   tick
 end
@@ -592,7 +1299,7 @@ num-cars
 num-cars
 0
 400
-2.0
+1.0
 1
 1
 NIL
@@ -661,7 +1368,7 @@ BUTTON
 94
 NIL
 go
-NIL
+T
 1
 T
 OBSERVER
@@ -670,6 +1377,21 @@ NIL
 NIL
 NIL
 1
+
+SLIDER
+26
+253
+198
+286
+cycle-feu-rouge
+cycle-feu-rouge
+20
+100
+50.0
+1
+1
+NIL
+HORIZONTAL
 
 @#$#@#$#@
 ## WHAT IS IT?
