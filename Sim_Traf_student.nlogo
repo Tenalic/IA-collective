@@ -30,7 +30,7 @@ patches-own
   dir             ;; direction "N", "E", "W", "S"
   clear-in        ;; nbre de ticks où le patch produit un autre accident
   nb_accident       ;; compteur d'accidents
-  nb_voiture     ;; nb de voiture dans le patch
+  nb_voiture     ;; nbre de voiture dans le patch
   cycle-feu  ;; temps ou le feu reste à une couleur
   feu-here ;; true si feu rouge
   init-feu
@@ -986,7 +986,8 @@ to move2
   if(tmpturn = -1)
   [
     set turn false
-   avancer
+   priorite-droite
+
 
   ]
   set dirTurn tmpturn
@@ -994,7 +995,7 @@ end
 
 
 
-to move
+to move;test des déplacement
   ask patch-here [
       ifelse( intersection? = true) [ ask turtles-here [ set turn true ] ]
                                     [ ask turtles-here [ set turn false ] ]
@@ -1115,7 +1116,7 @@ to go
   ask patches with [pcolor != brown + 3]
   [
     affiche_feu
-    set nb_voiture count turtles-here
+    set nb_voiture count Vehicles-here
 
   ]
   accident
