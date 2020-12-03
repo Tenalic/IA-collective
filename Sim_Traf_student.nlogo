@@ -472,8 +472,10 @@ to accident  ;détruit véhicules si accident et compte le nombre coup entre vé
       [
         ask turtles-here [
           up-accident
+          set num-cars-hit num-cars-hit + 1
           die
         ]
+
       ]
     ]
   ]
@@ -646,11 +648,13 @@ to avancer
     ifelse(action = 1)
     [
      set attente true
+
      freiner
 
     ]
     [
       set attente false
+
       set speed 0.1 + random-float speed-limit
       fd speed
     ]
@@ -1140,14 +1144,15 @@ ask vehicles
       initialise_car_in_intersection
     ]
   ]
+  set num-cars-stopped count vehicles with [attente = true]
   tick
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
 210
-62
+64
 647
-500
+502
 -1
 -1
 13.0
@@ -1189,9 +1194,9 @@ NIL
 
 SLIDER
 11
-102
+104
 103
-135
+137
 E-W_axis
 E-W_axis
 1
@@ -1204,9 +1209,9 @@ HORIZONTAL
 
 SLIDER
 106
-106
+108
 205
-139
+141
 N-S_axis
 N-S_axis
 1
@@ -1219,9 +1224,9 @@ HORIZONTAL
 
 SLIDER
 106
-143
+145
 205
-176
+178
 max-duration
 max-duration
 0
@@ -1234,9 +1239,9 @@ HORIZONTAL
 
 SWITCH
 11
-141
+143
 101
-174
+176
 crash?
 crash?
 1
@@ -1245,9 +1250,9 @@ crash?
 
 SLIDER
 107
-70
+72
 205
-103
+105
 road-size
 road-size
 1
@@ -1300,7 +1305,7 @@ num-cars
 num-cars
 0
 400
-1.0
+100.0
 1
 1
 NIL
@@ -1393,6 +1398,42 @@ cycle-feu-rouge
 1
 NIL
 HORIZONTAL
+
+PLOT
+682
+18
+1199
+335
+plot 1
+NIL
+NIL
+0.0
+10.0
+0.0
+10.0
+true
+false
+"" ""
+PENS
+"default" 1.0 0 -16777216 true "" "plot num-cars-stopped"
+
+PLOT
+682
+345
+1202
+605
+plot 2
+NIL
+NIL
+0.0
+10.0
+0.0
+10.0
+true
+false
+"" ""
+PENS
+"default" 1.0 0 -16777216 true "" "plot num-cars-hit"
 
 @#$#@#$#@
 ## WHAT IS IT?
