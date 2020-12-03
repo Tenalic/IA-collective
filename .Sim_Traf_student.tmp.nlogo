@@ -1246,7 +1246,7 @@ SWITCH
 174
 crash?
 crash?
-0
+1
 1
 -1000
 
